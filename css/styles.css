@@ -12,14 +12,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 50;
 }
 
 .modal-content {
-  background: rgb(0, 0, 0);
+  background: white;
   padding: 2rem;
   border-radius: 0.5rem;
   max-width: 500px;
   width: 90%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .footer {
@@ -31,8 +33,29 @@
   text-align: center;
   font-size: 0.875rem;
   color: #6c757d;
+  z-index: 40;
 }
 
+/*body {
+  background-image: url('../css/image/sp.jpg'); /* Use sp.jpg as background */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+}
+
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 2rem; /* Space for footer */
+}
+
+/* Mobile-first responsive design */
 @media (max-width: 600px) {
   .text-center {
     text-align: left;
@@ -41,16 +64,16 @@
     font-size: 1.5rem;
   }
   .font-bold {
-    font-weight: normal;
+    font-weight: 600;
   }
   .text-blue-900 {
-    color: blue;
+    color: #1e40af;
   }
   .mb-8 {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
-  .text-grey-600 {
-    color: grey;
+  .text-gray-600 {
+    color: #4a5568;
   }
   .mx-auto {
     margin-left: auto;
@@ -66,20 +89,93 @@
   .h-15 {
     height: 3.75rem;
   }
+
+  .modal-content {
+    max-width: 90%;
+    width: 85%;
+    padding: 1.5rem;
+  }
+
+  .footer {
+    font-size: 0.75rem;
+    padding: 0.5px;
+  }
+
+  header, nav, form, .table-container {
+    padding: 0.5rem;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  input, select, textarea {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  .text-lg {
+    font-size: 1rem;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem;
+  }
 }
 
+/* Tablet and larger screens */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .modal-content {
+    max-width: 80%;
+    width: 75%;
+  }
 
+  header, nav, form, .table-container {
+    padding: 1rem;
+  }
 
+  button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
 
-/*body {
-  background-image: url('../css/image/logo.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  input, select, textarea {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
 }
 
+/* Desktop screens */
+@media (min-width: 1025px) {
+  .modal-content {
+    max-width: 500px;
+  }
+}
 
+/* Touch-friendly adjustments */
+button, input, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure tables are scrollable on mobile */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  min-width: 100%;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 10;
+}
+
+/* Prevent body overflow on mobile */
+body {
+  overflow-x: hidden;
+}

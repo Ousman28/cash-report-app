@@ -5,89 +5,56 @@ const exportUtils = {
       return;
     }
 
-    // Define the headers for the CSV file
     const headers = [
-      'Date',
-      'Ref No',
-      'Supervisor',
-      'Flight Name',
-      'Zone',
-      'Paid',
-      'Diplomats',
-      'Infants',
-      'Not Paid',
-      'Paid Card/QR',
-      'Refunds',
-      'Deportees',
-      'Transit',
-      'Waivers',
-      'Prepaid Bank',
-      'Round Trip',
-      'Late Payment',
-      'Total Attended',
-      'IICS Infant',
-      'IICS Adult',
-      'IICS Total',
-      'GIA Infant',
-      'GIA Adult',
-      'GIA Total',
-      'Difference',
-      'Status',
-      'Submitted By',
-      'Verified By'
+      'Date', 'Ref No', 'Supervisor', 'Flight Name', 'Zone', 'Paid', 'Diplomats', 'Infants', 'Not Paid', 'Paid Card/QR',
+      'Refunds', 'Deportees', 'Transit', 'Waivers', 'Prepaid Bank', 'Round Trip', 'Late Payment', 'Total Attended',
+      'IICS Infant', 'IICS Adult', 'IICS Total', 'GIA Infant', 'GIA Adult', 'GIA Total', 'IICS-Total Difference', 
+      'GIA-Total Difference', 'Status', 'Submitted By', 'Verified By', 'Remarks'
     ];
 
-    // Convert the data to CSV format
     const csvContent = [
-      headers.join(','), // Add the header row
+      headers.join(','),
       ...data.map(report => [
-        report.date || '', // Date
-        report.refNo || '', // Ref No
-        report.supervisor || '', // Supervisor
-        report.flightName || '', // Flight Name
-        report.zone || '', // Zone
-        report.paid || '', // Paid
-        report.diplomats || '', // Diplomats
-        report.infants || '', // Infants
-        report.notPaid || '', // Not Paid
-        report.paidCardQr || '', // Paid Card/QR
-        report.refunds || '', // Refunds
-        report.deportees || '', // Deportees
-        report.transit || '', // Transit
-        report.waivers || '', // Waivers
-        report.prepaidBank || '', // Prepaid Bank
-        report.roundTrip || '', // Round Trip
-        report.latePayment || '', // Late Payment
-        report.totalAttended || '', // Total Attended
-        report.iicsInfant || '', // IICS Infant
-        report.iicsAdult || '', // IICS Adult
-        report.iicsTotal || '', // IICS Total
-        report.giaInfant || '', // GIA Infant
-        report.giaAdult || '', // GIA Adult
-        report.giaTotal || '', // GIA Total
-        (report.totalAttended - (report.giaTotal || 0)) || '', // Difference
-        report.verified ? 'Verified' : 'Pending', // Status
-        report.submittedBy || '', // Submitted By
-        report.verifiedBy || '' // Verified By
-      ].map(field => `"${field}"`).join(',')) // Wrap each field in quotes to handle commas
+        report.date || '',
+        report.refNo || '',
+        report.supervisor || '',
+        report.flightName || '',
+        report.zone || '',
+        report.paid || 0,
+        report.diplomats || 0,
+        report.infants || 0,
+        report.notPaid || 0,
+        report.paidCardQr || 0,
+        report.refunds || 0,
+        report.deportees || 0,
+        report.transit || 0,
+        report.waivers || 0,
+        report.prepaidBank || 0,
+        report.roundTrip || 0,
+        report.latePayment || 0,
+        report.totalAttended || 0,
+        report.iicsInfant || 0,
+        report.iicsAdult || 0,
+        report.iicsTotal || 0,
+        report.giaInfant || 0,
+        report.giaAdult || 0,
+        report.giaTotal || 0,
+        (report.iicsTotal || 0) - (report.totalAttended || 0), // IICS - Total Attended
+        (report.giaTotal || 0) - (report.totalAttended || 0),  // GIA - Total Attended
+        report.verified ? 'Verified' : 'Pending',
+        report.submittedBy || '',
+        report.verifiedBy || '',
+        report.remarks || ''
+      ].map(field => `"${field}"`).join(','))
     ].join('\n');
 
-    // Create a Blob with the CSV content
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-    // Create a temporary URL for the Blob
     const url = URL.createObjectURL(blob);
-
-    // Create a link element to trigger the download
     const a = document.createElement('a');
     a.href = url;
     a.download = `cash-collection-report-${new Date().toISOString().split('T')[0]}.csv`;
-
-    // Append the link to the document body and trigger the download
     document.body.appendChild(a);
     a.click();
-
-    // Clean up by removing the link and revoking the URL
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }

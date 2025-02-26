@@ -1,5 +1,5 @@
 const validation = {
-  // Validate the main report data
+  // Validate the main report data (for Data Analyst only)
   validateReport(data) {
     const errors = {};
 
@@ -8,84 +8,89 @@ const validation = {
       { field: 'date', message: 'Date is required' },
       { field: 'refNo', message: 'Reference number is required' },
       { field: 'supervisor', message: 'Supervisor name is required' },
-      { field: 'flight', message: 'Flight  is required' },
+      { field: 'flight', message: 'Flight is required' },
       { field: 'zone', message: 'Zone is required' },
     ];
 
     requiredFields.forEach(({ field, message }) => {
-      if (!data[field]) {
+      if (!data[field] || data[field].trim() === '') {
         errors[field] = message;
       }
     });
 
-    // Validate numeric fields
+    // Validate numeric fields (non-negative)
     const numericFields = [
-      { field: 'paid', message: 'Paid must be a positive number' },
-      { field: 'diplomats', message: 'Diplomats must be a positive number' },
-      { field: 'infants', message: 'Infants must be a positive number' },
-      { field: 'notPaid', message: 'Not Paid must be a positive number' },
-      { field: 'paidCardQr', message: 'Paid Card/QR must be a positive number' },
-      { field: 'refunds', message: 'Refunds must be a positive number' },
-      { field: 'deportees', message: 'Deportees must be a positive number' },
-      { field: 'transit', message: 'Transit must be a positive number' },
-      { field: 'waivers', message: 'Waivers must be a positive number' },
-      { field: 'prepaidBank', message: 'Prepaid Bank must be a positive number' },
-      { field: 'roundTrip', message: 'Round Trip must be a positive number' },
-      { field: 'latePayment', message: 'Late Payment must be a positive number' },
+      { field: 'paid', message: 'Paid must be a non-negative number' },
+      { field: 'diplomats', message: 'Diplomats must be a non-negative number' },
+      { field: 'infants', message: 'Infants must be a non-negative number' },
+      { field: 'notPaid', message: 'Not Paid must be a non-negative number' },
+      { field: 'paidCardQr', message: 'Paid Card/QR must be a non-negative number' },
+      { field: 'refunds', message: 'Refunds must be a non-negative number' },
+      { field: 'deportees', message: 'Deportees must be a non-negative number' },
+      { field: 'transit', message: 'Transit must be a non-negative number' },
+      { field: 'waivers', message: 'Waivers must be a non-negative number' },
+      { field: 'prepaidBank', message: 'Prepaid Bank must be a non-negative number' },
+      { field: 'roundTrip', message: 'Round Trip must be a non-negative number' },
+      { field: 'latePayment', message: 'Late Payment must be a non-negative number' },
     ];
 
     numericFields.forEach(({ field, message }) => {
-      if (data[field] === undefined || isNaN(data[field]) || data[field] < 0) {
+      const value = Number(data[field]);
+      if (isNaN(value) || value < 0) {
         errors[field] = message;
       }
     });
-
-    // Validate Total Attended
-    if (data.totalAttended === undefined || isNaN(data.totalAttended) || data.totalAttended < 0) {
-      errors.totalAttended = 'Total Attended must be a positive number';
-    }
 
     return errors;
   },
 
-  // Validate IICS and GIA fields
-  validateIICSGIA(iicsInfant, iicsAdult, giaInfant, giaAdult) {
+  // Validate IICS and GIA fields (for Data Analyst only)
+  validateIICSGIA(iicsInfant, iicsAdult, iicsTotal, giaInfant, giaAdult, giaTotal) {
     const errors = {};
 
     // Validate IICS fields
     if (iicsInfant === undefined || isNaN(iicsInfant) || iicsInfant < 0) {
-      errors.iicsInfant = 'IICS Infant must be a positive number';
+      errors.iicsInfant = 'IICS Infant must be a non-negative number';
     }
     if (iicsAdult === undefined || isNaN(iicsAdult) || iicsAdult < 0) {
-      errors.iicsAdult = 'IICS Adult must be a positive number';
+      errors.iicsAdult = 'IICS Adult must be a non-negative number';
+    }
+    if (iicsTotal === undefined || isNaN(iicsTotal) || iicsTotal < 0 || iicsTotal !== (iicsInfant + iicsAdult)) {
+      errors.iicsTotal = 'IICS Total must be the sum of IICS Infant and IICS Adult';
     }
 
     // Validate GIA fields
     if (giaInfant === undefined || isNaN(giaInfant) || giaInfant < 0) {
-      errors.giaInfant = 'GIA Infant must be a positive number';
+      errors.giaInfant = 'GIA Infant must be a non-negative number';
     }
     if (giaAdult === undefined || isNaN(giaAdult) || giaAdult < 0) {
-      errors.giaAdult = 'GIA Adult must be a positive number';
+      errors.giaAdult = 'GIA Adult must be a non-negative number';
+    }
+    if (giaTotal === undefined || isNaN(giaTotal) || giaTotal < 0 || giaTotal !== (giaInfant + giaAdult)) {
+      errors.giaTotal = 'GIA Total must be the sum of GIA Infant and GIA Adult';
     }
 
     return errors;
   },
 
-  // Validate the difference between Total Attended and GIA Total
-  validateDifference(totalAttended, giaTotal) {
+  // Validate the difference between Total Attended and GIA/IICS Totals (for Data Analyst only)
+  validateDifference(totalAttended, iicsTotal, giaTotal) {
     const errors = {};
 
     if (totalAttended === undefined || isNaN(totalAttended) || totalAttended < 0) {
-      errors.totalAttended = 'Total Attended must be a positive number';
+      errors.totalAttended = 'Total Attended must be a non-negative number';
+    }
+    if (iicsTotal === undefined || isNaN(iicsTotal) || iicsTotal < 0) {
+      errors.iicsTotal = 'IICS Total must be a non-negative number';
     }
     if (giaTotal === undefined || isNaN(giaTotal) || giaTotal < 0) {
-      errors.giaTotal = 'GIA Total must be a positive number';
+      errors.giaTotal = 'GIA Total must be a non-negative number';
     }
 
-    if (totalAttended < giaTotal) {
-      errors.difference = 'Total Attended cannot be less than GIA Total';
+    if (totalAttended < giaTotal || totalAttended < iicsTotal) {
+      errors.difference = 'Total Attended cannot be less than GIA or IICS Total';
     }
 
     return errors;
-  }
+  },
 };

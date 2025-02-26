@@ -1,0 +1,411 @@
+class App {
+    constructor() {
+      this.container = document.getElementById('app');
+      this.currentUser = null;
+  
+      // Create initial admin account if it does not exist
+      if (!storage.findUser('admin')) {
+        storage.saveUser({
+          username: 'admin',
+          password: 'admin123', // Choose a secure password
+          role: 'admin'
+        });
+      }
+  
+      this.init();
+    }
+  
+    init() {
+      this.header = new Header(document.createElement('div'));
+      this.welcomeMessage = new WelcomeMessage(document.createElement('div'));
+      this.loginForm = new LoginForm(document.createElement('div'));
+      this.registerForm = new RegisterForm(document.createElement('div'));
+      this.dataEntryForm = new DataEntryForm(document.createElement('div'));
+      this.dataTable = new DataTable(document.createElement('div'));
+  
+      this.showLoginScreen();
+    }
+  
+    showLoginScreen() {
+      this.container.innerHTML = '';
+      this.renderLogo();
+      this.welcomeMessage.render();
+      this.container.appendChild(this.welcomeMessage.container);
+  
+      this.loginForm.render({
+        onLogin: this.handleLogin.bind(this)
+      });
+      this.container.appendChild(this.loginForm.container);
+    }
+  
+    showRegisterScreen() {
+      this.container.innerHTML = '';
+      this.renderLogo();
+      this.welcomeMessage.render();
+      this.container.appendChild(this.welcomeMessage.container);
+  
+      this.registerForm.render({
+        onRegister: this.handleAdminRegister.bind(this),
+        onCancel: () => this.showLoginScreen()
+      });
+      this.container.appendChild(this.registerForm.container);
+    }
+  
+    renderLogo() {
+      const logo = document.createElement('img');
+      logo.src = ('/css/image/my-logo.png'); // Path to your logo image
+      logo.alt = 'App Logo';
+      logo.className = 'mx-auto my-2 w-40 h-15'; // Tailwind classes for centering and spacing
+      this.container.appendChild(logo);
+    }
+  
+    handleLogin(username, password) {
+      const user = storage.findUser(username, password);
+      if (user) {
+        this.currentUser = user;
+        this.showDashboard();
+      } else {
+        alert('Invalid credentials');
+      }
+    }
+  
+    handleRegister(username, password, role) {
+      const users = storage.getUsers();
+      if (users.some(u => u.username === username)) {
+        alert('Username already exists');
+        return;
+      }
+  
+      storage.saveUser({ username, password, role });
+      alert('Welcome! Your account has been created successfully.');
+      this.showLoginScreen();
+    }
+  
+    handleAdminRegister(username, password, role) {
+      const users = storage.getUsers();
+      if (users.some(u => u.username === username)) {
+        alert('Username already exists');
+        return;
+      }
+  
+      storage.saveUser({ username, password, role });
+      alert('User account has been created successfully.');
+      this.showAdminDashboard();
+    }
+  
+    handleLogout() {
+      this.currentUser = null;
+      this.showLoginScreen();
+    }
+  
+    showDashboard() {
+      this.container.innerHTML = '';
+      this.header.render(this.currentUser.username, () => this.handleLogout());
+      this.container.appendChild(this.header.container);
+  
+      // Allow admin to access all dashboards
+      if (this.currentUser.role === 'admin') {
+        this.showAdminDashboard();
+        /*this.showTeamLeadDashboard();*/
+       /* this.showDataAnalystDashboard();*/
+      } else if (this.currentUser.role === 'teamLead') {
+        this.showTeamLeadDashboard();
+      } else if (this.currentUser.role === 'dataAnalyst' || this.currentUser.role === 'cashController') {
+        this.showDataAnalystDashboard(); // Allow cashController to access Data Analyst dashboard
+      }
+    }
+  
+    showAdminDashboard() {
+      this.container.innerHTML = '';
+      this.header.render(this.currentUser.username, () => this.handleLogout());
+      this.container.appendChild(this.header.container);
+  
+      // Create Date Range Picker input
+      const dateRangeInput = document.createElement('input');
+      dateRangeInput.type = 'text';
+      dateRangeInput.id = 'dateRangePicker';
+      dateRangeInput.className = 'date-range-picker-input';
+  
+      // Append date range picker to the container
+      this.container.appendChild(dateRangeInput);
+  
+      // Initialize Date Range Picker
+      $(function() 
+      { $('#dateRangePicker').daterangepicker(); });
+  
+      // Create navigation bar with three buttons
+      const navBar = document.createElement('nav');
+      navBar.className = 'flex justify-end p-2'; // Tailwind classes to align buttons to the right
+      navBar.innerHTML = `
+        <button id="createUserBtn" class="bg-blue-500 text-white py-2 px-4 rounded m-1 hover:bg-green-900">Create User</button>
+        <button id="deactivateUserBtn" class="bg-red-500 text-white py-2 px-4 rounded m-1 hover:bg-red-900">Deactivate User</button>
+        <button id="viewUsersBtn" class="bg-gray-500 text-white py-2 px-4 rounded m-1 hover:bg-gray-900">View Users</button>
+      `;
+      this.container.appendChild(navBar);
+  
+      // Event listeners for navigation bar buttons
+      document.getElementById('createUserBtn').addEventListener('click', () => this.showRegisterScreen());
+      document.getElementById('deactivateUserBtn').addEventListener('click', () => {
+        const username = prompt('Enter username to deactivate:');
+        if (username) {
+          const user = storage.findUserByUsername(username);
+          if (user) {
+            storage.deactivateUser(user.username); // Backend developer needs to implement this method
+            alert('User account has been deactivated.');
+          } else {
+            alert('User not found.');
+          }
+        }
+      });
+      document.getElementById('viewUsersBtn').addEventListener('click', () => this.showUserList());
+    }
+  
+    showTeamLeadDashboard() {
+      this.header.render(this.currentUser.username, () => this.handleLogout());
+      this.container.appendChild(this.header.container);
+  
+      this.dataEntryForm.render({
+        onSubmit: this.handleReportSubmit.bind(this)
+      });
+      this.container.appendChild(this.dataEntryForm.container);
+  
+      this.dataTable.render({
+        data: storage.getReportsByUser(this.currentUser.username),
+        showVerification: false
+      });
+      this.container.appendChild(this.dataTable.container);
+    }
+  
+    showDataAnalystDashboard() {
+      this.header.render(this.currentUser.username, () => this.handleLogout());
+      this.container.appendChild(this.header.container);
+  
+      const dateRangeInput = document.createElement('input'); 
+      dateRangeInput.type = 'text'; 
+      dateRangeInput.id = 'dateRangePicker';
+       dateRangeInput.className = 'date-range-picker-input';
+        this.container.appendChild(dateRangeInput);
+  
+      this.dataTable.render({
+        data: storage.getReports(),
+        showVerification: this.currentUser.role === 'dataAnalyst', // Only show verification for Data Analysts
+        onVerify: this.handleReportVerification.bind(this),
+        onDownload: () => exportUtils.exportToCSV(storage.getReports())
+      });
+      this.container.appendChild(this.dataTable.container);
+    }
+  
+    showUserList() {
+      const users = storage.getUsers();
+  
+      const userListContainer = document.createElement('div');
+      userListContainer.className = 'user-list-container my-4 p-4 bg-white shadow rounded-lg';
+  
+      // Create search input
+      const searchContainer = document.createElement('div');
+      searchContainer.className = 'search-container mb-4';
+      searchContainer.innerHTML = `
+          <input
+              type="text"
+              id="userSearch"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="Search users by username"
+          />
+      `;
+      userListContainer.appendChild(searchContainer);
+  
+      const userListTable = document.createElement('table');
+      userListTable.className = 'min-w-full bg-white divide-y divide-gray-200';
+  
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+          <tr class="bg-gray-100">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telephone</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+      `;
+      userListTable.appendChild(thead);
+  
+      const tbody = document.createElement('tbody');
+      users.forEach(user => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-100';
+          row.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.role}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.gender}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.telephone}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.dateOfBirth}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button class="edit-btn bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-700" data-username="${user.username}">Edit</button>
+                  <button class="delete-btn bg-red-500 text-white py-1 px-3 rounded hover:bg-red-700 ml-2" data-username="${user.username}">Delete</button>
+              </td>
+          `;
+          tbody.appendChild(row);
+      });
+      userListTable.appendChild(tbody);
+  
+      userListContainer.appendChild(userListTable);
+      this.container.appendChild(userListContainer);
+  
+      // Add event listeners for Edit and Delete buttons
+      document.querySelectorAll('.edit-btn').forEach(button => {
+          button.addEventListener('click', (event) => {
+              const username = event.target.getAttribute('data-username');
+              const user = storage.findUserByUsername(username);
+              if (user) {
+                  this.showEditUserScreen(user);
+              }
+          });
+      });
+  
+      document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', (event) => {
+              const username = event.target.getAttribute('data-username');
+              const user = storage.findUserByUsername(username);
+              if (user) {
+                  storage.deleteUser(username);
+                  alert('User account has been deleted.');
+                  this.showUserList();
+              }
+          });
+      });
+  
+      // Add event listener for search input
+      document.querySelector('#userSearch').addEventListener('input', (event) => {
+          const searchTerm = event.target.value.toLowerCase();
+          const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchTerm));
+          this.renderUserList(filteredUsers);
+      });
+  }
+  
+  renderUserList(users) {
+      const tbody = document.querySelector('.user-list-container tbody');
+      tbody.innerHTML = ''; // Clear current rows
+  
+      users.forEach(user => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-100';
+          row.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.role}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.gender}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.telephone}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.dateOfBirth}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button class="edit-btn bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-700" data-username="${user.username}">Edit</button>
+                  <button class="delete-btn bg-red-500 text-white py-1 px-3 rounded hover:bg-red-700 ml-2" data-username="${user.username}">Delete</button>
+                  
+              </td>
+          `;
+          tbody.appendChild(row);
+      });
+  
+      // Re-add event listeners for Edit and Delete buttons
+      document.querySelectorAll('.edit-btn').forEach(button => {
+          button.addEventListener('click', (event) => {
+              const username = event.target.getAttribute('data-username');
+              const user = storage.findUserByUsername(username);
+              if (user) {
+                  this.showEditUserScreen(user);
+              }
+          });
+      });
+  
+      document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', (event) => {
+              const username = event.target.getAttribute('data-username');
+              const user = storage.findUserByUsername(username);
+              if (user) {
+                  storage.deleteUser(username);
+                  alert('User account has been deleted.');
+                  this.showUserList();
+              }
+          });
+      });
+  }
+  
+  // Method to show the edit user screen
+  showEditUserScreen(user) {
+      this.container.innerHTML = '';
+  
+      // Create form for editing user details
+      const editForm = document.createElement('form');
+      editForm.className = 'edit-user-form bg-white p-4 shadow rounded-lg';
+  
+      editForm.innerHTML = `
+          <h2 class="text-xl font-bold mb-4">Edit User</h2>
+          <div class="mb-4">
+              <label class="block text-gray-700">Username</label>
+              <input type="text" class="w-full p-2 border border-gray-300 rounded mt-1" value="${user.username}" readonly>
+          </div>
+          <div class="mb-4">
+              <label class="block text-gray-700">Role</label>
+              <input type="text" id="edit-role" class="w-full p-2 border border-gray-300 rounded mt-1" value="${user.role}">
+          </div>
+          <div class="flex justify-end">
+              <button type="button" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700" onclick="updateUser('${user.username}')">Save</button>
+              <button type="button" class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 ml-2" onclick="app.showUserList()">Cancel</button>
+          </div>
+      `;
+  
+      this.container.appendChild(editForm);
+  
+      // Add updateUser method
+      window.updateUser = (username) => {
+          const role = document.getElementById('edit-role').value;
+          const user = storage.findUserByUsername(username);
+          if (user) {
+              user.role = role;
+              storage.updateUser(user);
+              alert('User details updated successfully.');
+              this.showUserList();
+          }
+      };
+  }
+  
+  
+    handleReportSubmit(data) {
+      if (Object.keys(validation.validateReport(data)).length > 0) {
+        alert('Please fill all required fields correctly');
+        return;
+      }
+  
+      const report = {
+        ...data,
+        id: crypto.randomUUID(),
+        submittedBy: this.currentUser.username,
+        verified: false
+      };
+  
+      storage.saveReport(report);
+      this.showDashboard();
+    }
+  
+    handleReportVerification(id, iics, gia) {
+      if (Object.keys(validation.validateIICSGIA(iics, gia)).length > 0) {
+        alert('Please fill IICS and GIA fields');
+        return;
+      }
+  
+      storage.updateReport(id, {
+        iics,
+        gia,
+        verified: true,
+        verifiedBy: this.currentUser.username
+      });
+  
+      this.showDashboard();
+    }
+  }
+  
+  // Initialize the app
+  new App();
+  
